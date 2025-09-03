@@ -8,6 +8,12 @@ pipeline {
                     url: 'https://github.com/splegi/my-telebot'
             }
         }
+        
+        stage('Test Message') {
+            steps {
+                echo "🚀 Hello, Jenkins! This is a test run."
+            }
+        }
 
         stage('Build Docker image') {
             steps {
