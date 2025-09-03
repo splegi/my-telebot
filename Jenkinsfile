@@ -1,10 +1,3 @@
-pipeline {
-    agent any
-    
-    environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub')
-        IMAGE_NAME = 'splegi/my-telebot'
-    }
 
 pipeline {
     agent any
