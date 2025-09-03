@@ -1,8 +1,8 @@
 pipeline {
-    agent any //указываем на каком агенте запускать
-    
-    stages { //список шагов пайплайна
-        stage('checkout') {
+    agent any
+
+    stages {
+        stage('Checkout') {
             steps {
                 checkout scm
             }
@@ -10,32 +10,35 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("my-telebot:latest")
-                }
+                bat 'docker build -t my-telebot:latest .'
             }
         }
 
         stage('Test Run') {
             steps {
-                script {
-                    docker.image("my-telebot:latest").withRun('-d --name test-bot') { c ->
-                        sleep 5
-                        sh "docker ps | findstr test-bot"
-                        sh "docker rm -f ${c.id}"
-                    }
-                }
+                bat '''
+                REM Удаляем старый тестовый контейнер, если есть
+                docker rm -f test-bot || exit 0
+                REM Запускаем контейнер в фоне на короткое время
+                docker run -d --name test-bot my-telebot:latest
+                REM Ждем 5 секунд
+                timeout /t 5
+                REM Проверяем, что контейнер запустился
+                docker ps | findstr test-bot
+                REM Останавливаем и удаляем тестовый контейнер
+                docker rm -f test-bot
+                '''
             }
         }
 
         stage('Deploy Bot') {
             steps {
-                script {
-                    // Проверяем, есть ли старый контейнер
-                    sh 'docker rm -f my-telebot || true'
-                    // Запускаем контейнер в фоне
-                    sh 'docker run -d --name my-telebot my-telebot:latest'
-                }
+                bat '''
+                REM Удаляем старый контейнер продакшена, если есть
+                docker rm -f my-telebot || exit 0
+                REM Запускаем контейнер бота в фоне
+                docker run -d --name my-telebot my-telebot:latest
+                '''
             }
         }
     }
