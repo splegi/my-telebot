@@ -1,60 +1,49 @@
 pipeline {
     agent any
+    
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub')
+        IMAGE_NAME = 'splegi/my-telebot'
+    }
+
+pipeline {
+    agent any
 
     environment {
-        // Опционально: задаём имя образа Docker
-        IMAGE_NAME = "my-telebot"
-        IMAGE_TAG = "latest"
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub')
+        IMAGE_NAME = "splegi/my-telebot"
     }
 
     stages {
-        stage('Проверка среды') {
+        stage('Checkout') {
             steps {
-                echo 'Шаг 1: Проверяем Python и Docker'
-                bat 'python --version'
-                bat 'docker --version'
+                git branch: 'main',
+                    url: 'https://github.com/splegi/my-telebot'
             }
         }
 
-        stage('Запуск Python скрипта') {
+        stage('Build Docker image') {
             steps {
-                echo 'Шаг 2: Запускаем import_telebot.py'
-                bat 'python import_telebot.py'
+                script {
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                }
             }
         }
 
-        stage('Сборка Docker образа') {
+        stage('Login to Docker Hub') {
             steps {
-                echo 'Шаг 3: Сборка Docker образа'
-                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
+                script {
+                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                }
             }
         }
 
-        stage('Тестовый запуск Docker контейнера') {
+        stage('Push Docker image') {
             steps {
-                echo 'Шаг 4: Тестовый запуск контейнера'
-                // Запускаем контейнер на 5 секунд и убиваем его
-                bat 'docker run --name test_%IMAGE_NAME% %IMAGE_NAME%:%IMAGE_TAG%'
-                bat 'docker rm -f test_%IMAGE_NAME%'
+                script {
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
             }
-        }
-
-        stage('Завершение') {
-            steps {
-                echo 'Шаг 5: Мини-пайплайн успешно выполнен!'
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Сборка завершена!'
-        }
-        success {
-            echo 'Статус: SUCCESS'
-        }
-        failure {
-            echo 'Статус: FAILURE'
         }
     }
 }
