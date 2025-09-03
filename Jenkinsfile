@@ -1,11 +1,5 @@
-
 pipeline {
     agent any
-
-    environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub')
-        IMAGE_NAME = "splegi/my-telebot"
-    }
 
     stages {
         stage('Checkout') {
@@ -17,25 +11,30 @@ pipeline {
 
         stage('Build Docker image') {
             steps {
-                script {
-                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
-                }
+                bat 'docker build -t my-telebot .'
+            }
+        }
+
+        stage('Run container locally') {
+            steps {
+                bat 'docker run -d --name my-telebot --rm my-telebot'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub',
+                                                 usernameVariable: 'DOCKER_USER',
+                                                 passwordVariable: 'DOCKER_PASS')]) {
+                    bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
                 }
             }
         }
 
         stage('Push Docker image') {
             steps {
-                script {
-                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
-                }
+                bat 'docker tag my-telebot splegi/my-telebot:latest'
+                bat 'docker push splegi/my-telebot:latest'
             }
         }
     }
