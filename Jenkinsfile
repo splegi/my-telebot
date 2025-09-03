@@ -23,7 +23,8 @@ pipeline {
 
         stage('Run container locally') {
             steps {
-                bat 'docker run -d --name my-telebot --rm my-telebot'
+                // Проброс порта 8000 для Prometheus
+                bat 'docker run -d --name my-telebot --rm -p 8000:8000 my-telebot'
             }
         }
 

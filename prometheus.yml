@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'my-telebot'
+    static_configs:
+      - targets: ['my-telebot:8000']  # если бот будет отдавать метрики
