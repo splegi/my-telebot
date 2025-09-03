@@ -1,5 +1,5 @@
 pipeline {
-    agent ( label 'windows' )
+    agent any
     stages {
         stage('Test Docker') {
             steps {
@@ -8,4 +8,3 @@ pipeline {
         }
     }
 }
-
